@@ -1,0 +1,63 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  3.0.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default none;
+}
+
+gradSchemes
+{
+    default none;
+    //gradient of  the scalar variable T
+    grad(T) Gauss linear;
+}
+
+divSchemes
+{
+    default none;
+    
+    // convective term discrettisation for T
+    //convection of flux term using phi and not U
+	div(phi,T) bounded Gauss upwind;
+}
+
+laplacianSchemes
+{
+
+
+    default none;
+    
+    // laplacianm scheme to compute term T DT\nabla^2 T
+    
+    laplacian(DT,T) Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+// Interpolation scheme for U to calculate flux Phi
+    default none;
+    interpolate(U) linear;
+}
+
+snGradSchemes
+{
+    default none;
+}
+
+
+// ************************************************************************* //

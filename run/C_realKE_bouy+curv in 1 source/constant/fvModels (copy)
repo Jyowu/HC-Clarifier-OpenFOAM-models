@@ -1,0 +1,606 @@
+/*--------------------------------*- OpenFOAM -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      fvModels;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+concentration  0;
+
+kBouyancyCurvatureSource
+{
+    type            coded;
+    active          yes;
+    select          all;
+
+    g               (0 0 -9.81);
+    ScT             0.7;
+
+
+        field          k;
+
+        codeInclude
+        #{
+            #include "fvm.H"
+            #include "fvc.H"
+            #include <cmath>
+        #};
+
+        codeCorrect
+        #{
+
+        #};
+
+        codeAddSup
+        #{
+     //#############################################BOUYANCY START ##############################################  
+
+             // Get the input data
+             dimensionedVector g
+             (
+                 dimensionedVector(
+                     "g",
+                     dimAcceleration,
+		     coeffs().lookup("g")
+                 )
+             ); 
+             scalar ScT(readScalar(coeffs().lookup("ScT")));
+
+             // Get the required fields
+                const volVectorField& U = mesh().lookupObject<volVectorField>("U");
+                const volScalarField& nut = mesh().lookupObject<volScalarField>("nut");
+                const volScalarField& k    = mesh().lookupObject<volScalarField>("k");
+                const volScalarField& epsilon = mesh().lookupObject<volScalarField>("epsilon");
+                const surfaceScalarField& phi = mesh().lookupObject<surfaceScalarField>("phi");
+                const volScalarField& alpha = mesh().lookupObject<volScalarField>("alpha");
+                const volScalarField& rho = mesh().lookupObject<volScalarField>("rho");
+
+
+
+              
+	        // Get cell volume
+	        const scalarField& V = mesh().V();
+		
+             // Compute the source term
+             const scalarField Gb = nut.internalField()/ScT*(g & fvc::grad(rho))*V;
+  //#############################################BOUYANCY END ##############################################              
+
+
+
+  //#############################################CURVATURE START ##############################################              
+
+
+
+        volTensorField gradU = fvc::grad(U); // gradient of velocity field
+        volSymmTensorField S = symm(gradU); // symmetric part of the gradient (strain rate tensor)
+    
+        volTensorField Omega = skew(gradU); // antisymmetric part of the gradient (vorticity tensor)
+        volScalarField tefomega = epsilon/(0.09* k + SMALL); // turbulence dissipation rate divided by a small constant times k
+        volScalarField tefomega2 = tefomega * tefomega; // square of tefomega
+
+
+        volScalarField S2 = 2.0 * magSqr(S); // square of the strain rate tensor
+        volScalarField Omega2 = 2.0 * magSqr(Omega); // square of the vorticity tensor
+        volScalarField Omegamag = mag(Omega); // magnitude of the vorticity tensor
+
+        volScalarField D2 = max(S2, 0.09 * tefomega2); // maximum of the strain rate tensor squared and a small constant times the square of tefomega
+        // This is a measure of the turbulence intensity, ensuring it does not go below a certain
+        volScalarField Dtilda = pow(sqrt(D2 + SMALL), 3)*Omegamag; // cube of the square root of D2 plus a small constant, scaled by the magnitude of the vorticity tensor
+
+        volScalarField rStar = sqrt(S2 ) / (sqrt(Omega2 + SMALL)); // ratio of the square root of the strain rate tensor squared to the square root of the vorticity tensor squared, ensuring it does not go below a small constant
+
+
+        volSymmTensorField DSDt = fvc::ddt(S)+fvc::div(phi, S); // time derivative of the strain rate tensor plus divergence of the flux of the strain rate tensor
+
+
+
+        
+        volTensorField rTilda= Omega * 0.0; // Initialize rTilda as a zero tensor field
+
+
+
+        forAll(rTilda, celli)
+        {
+            
+             scalar sum = 0.0;
+            for (int i = 0; i < 3; ++i)
+            {
+                for (int j = 0; j < 3; ++j)
+                {  
+                    for (int k = 0; k < 3; ++k)       const volVectorField& U = mesh().lookupObject<volVectorField>("U");
+        const volScalarField& nut = mesh().lookupObject<volScalarField>("nut");
+        const volScalarField& k    = mesh().lookupObject<volScalarField>("k");
+        const volScalarField& epsilon = mesh().lookupObject<volScalarField>("epsilon");
+        const surfaceScalarField& phi = mesh().lookupObject<surfaceScalarField>("phi");
+        const volScalarField& alpha = mesh().lookupObject<volScalarField>("alpha");
+        const volScalarField& rho = mesh().lookupObject<volScalarField>("rho");
+
+
+
+        volTensorField gradU = fvc::grad(U); // gradient of velocity field
+        volSymmTensorField S = symm(gradU); // symmetric part of the gradient (strain rate tensor)
+    
+        volTensorField Omega = skew(gradU); // antisymmetric part of the gradient (vorticity tensor)
+        volScalarField tefomega = epsilon/(0.09* k + SMALL); // turbulence dissipation rate divided by a small constant times k
+        volScalarField tefomega2 = tefomega * tefomega; // square of tefomega
+
+
+        volScalarField S2 = 2.0 * magSqr(S); // square of the strain rate tensor
+        volScalarField Omega2 = 2.0 * magSqr(Omega); // square of the vorticity tensor
+        volScalarField Omegamag = mag(Omega); // magnitude of the vorticity tensor
+
+        volScalarField D2 = max(S2, 0.09 * tefomega2); // maximum of the strain rate tensor squared and a small constant times the square of tefomega
+        // This is a measure of the turbulence intensity, ensuring it does not go below a certain
+        volScalarField Dtilda = pow(sqrt(D2 + SMALL), 3)*Omegamag; // cube of the square root of D2 plus a small constant, scaled by the magnitude of the vorticity tensor
+
+        volScalarField rStar = sqrt(S2 ) / (sqrt(Omega2 + SMALL)); // ratio of the square root of the strain rate tensor squared to the square root of the vorticity tensor squared, ensuring it does not go below a small constant
+
+
+        volSymmTensorField DSDt = fvc::ddt(S)+fvc::div(phi, S); // time derivative of the strain rate tensor plus divergence of the flux of the strain rate tensor
+
+
+
+        
+        volTensorField rTilda= Omega * 0.0; // Initialize rTilda as a zero tensor field
+
+
+
+        forAll(rTilda, celli)
+        {
+            
+             scalar sum = 0.0;
+            for (int i = 0; i < 3; ++i)
+            {
+                for (int j = 0; j < 3; ++j)
+                {  
+                    for (int k = 0; k < 3; ++k)
+                    {
+                       
+                                sum += 2.0 * Omega[celli].component(3*i+k)* S[celli].component(3*j+k)*(DSDt[celli].component(3*i+j))/Dtilda[celli]; // Calculate the contribution of each component of the tensors to rTilda
+                        
+                    }
+                }
+            }
+
+            rTilda[celli] = sum;
+        }
+ //
+
+        volScalarField rTildamag = mag(rTilda) + SMALL; // magnitude of rTilda plus a small constant to avoid problem when using in tan-1()
+
+        scalar cr1 = 1.0;
+        scalar cr2 = 2.0;
+        scalar cr3 = 1.0;
+        scalar C_curv = 1.0;
+
+
+        volScalarField frotation = (1.0 + cr1)
+                         * (2.0 * rStar / (1.0 + rStar))
+                         * (1.0 - cr3 * atan(cr2 * rTildamag))
+                         - cr1;        // Calculate the rotation function based on the strain rate and vorticity tensors
+
+
+        volScalarField fr1 = max(min(frotation, scalar(1.25)), scalar(0.0)); // Ensure the rotation function is within the range [0, 1.25]
+
+        volScalarField fr2 = max(scalar(0.0), scalar(1.0)+ C_curv*(fr1-scalar(1.0))); // Calculate the curvature correction factor based on the rotation function and a curvature constant
+
+        volScalarField G = nut*(gradU && dev(twoSymm(gradU))); // Calculate the production term based on the strain rate tensor and the kinematic viscosity
+
+                    {
+                       
+                                sum += 2.0 * Omega[celli].component(3*i+k)* S[celli].component(3*j+k)*(DSDt[celli].component(3*i+j))/Dtilda[celli]; // Calculate the contribution of each component of the tensors to rTilda
+                        
+                    }
+                }
+            }
+
+            rTilda[celli] = sum;
+        }
+ //
+
+        volScalarField rTildamag = mag(rTilda) + SMALL; // magnitude of rTilda plus a small constant to avoid problem when using in tan-1()
+
+        scalar cr1 = 1.0;
+        scalar cr2 = 2.0;
+        scalar cr3 = 1.0;
+        scalar C_curv = 1.0;
+
+
+        volScalarField frotation = (1.0 + cr1)
+                         * (2.0 * rStar / (1.0 + rStar))
+                         * (1.0 - cr3 * atan(cr2 * rTildamag))
+                         - cr1;        // Calculate the rotation function based on the strain rate and vorticity tensors
+
+
+        volScalarField fr1 = max(min(frotation, scalar(1.25)), scalar(0.0)); // Ensure the rotation function is within the range [0, 1.25]
+
+        volScalarField fr2 = max(scalar(0.0), scalar(1.0)+ C_curv*(fr1-scalar(1.0))); // Calculate the curvature correction factor based on the rotation function and a curvature constant
+
+        volScalarField G = nut*(gradU && dev(twoSymm(gradU))); // Calculate the production term based on the strain rate tensor and the kinematic viscosity
+
+
+
+
+
+
+             // Add the source term to the equation
+             scalarField& kSource = eqn.source();
+             kSource += Gb + (fr2 - 1.0) * alpha()*rho()*G;;
+             
+             Info<<"Source added ="<<endl<<endl;
+        #};
+
+        codeSetValue
+        #{
+        
+        #};
+
+        // Dummy entry. Make dependent on above to trigger recompilation
+        code
+        #{
+            $codeInclude
+            $codeCorrect
+            $codeAddSup
+            $codeSetValue
+        #};
+    //}
+}
+
+epsilonBouyancySource
+{
+    type            coded;
+    active          yes;
+    select          all;
+
+    //name            epsilonBuoyancySource;
+    g               (0 0 -9.81);
+    ScT             0.7;
+
+    //scalarCodedSourceCoeffs
+    //{
+       // selectionMode   all;
+
+        field          epsilon;
+
+        codeInclude
+        #{
+             #include "fvm.H"
+        #};
+
+        codeCorrect
+        #{
+
+        #};
+
+        codeAddSup
+        #{
+             // Get the input data
+             dimensionedVector g
+             (
+                 dimensionedVector(
+                     "g",
+                     dimAcceleration,
+		     coeffs().lookup("g")
+                 )
+             ); 
+             scalar ScT(readScalar(coeffs().lookup("ScT")));
+	     scalar C1 = 0.4;
+	     scalar C3 = 0.9;
+	     dimensionedScalar k_small("k_small", dimEnergy/dimMass, SMALL);
+
+             // Get the required fields
+             const volScalarField& rho = mesh().lookupObject<volScalarField>("rho");
+             const volScalarField& nut = mesh().lookupObject<volScalarField>("nut");
+             const volScalarField& k = mesh().lookupObject<volScalarField>("k");
+             const volScalarField& epsilon = mesh().lookupObject<volScalarField>("epsilon");
+
+             // Compute the buoyancy term
+             const volScalarField Gb = nut/ScT*(g & fvc::grad(rho));
+
+             // Add the source term to the equation
+             scalarField& epsilonSource = eqn.source();
+             epsilonSource -= C1*epsilon/(k + k_small)*C3*Gb;
+        #};
+
+        codeSetValue
+        #{
+        
+        #};
+
+        // Dummy entry. Make dependent on above to trigger recompilation
+        code
+        #{
+            $codeInclude
+            $codeCorrect
+            $codeAddSup
+            $codeSetValue
+        #};
+    //}
+}
+
+/*--------------------------------*- C++ -*----------------------------------*\
+|     fvModels to inject curvature correction into k and epsilon             |
+\*---------------------------------------------------------------------------*/
+
+kCurvatureCorrectionSource
+{
+    type            coded;
+    active          yes;
+
+    select           all;
+    field            k;
+
+    //name            kCurvatureCorrectionSource;
+
+
+
+    codeInclude
+    #{
+        #include "fvm.H"
+        #include "fvc.H"
+        #include <cmath>
+
+
+    #};
+
+    codeCorrect
+    #{
+
+    #};
+
+    codeAddSup
+    #{
+        const volVectorField& U = mesh().lookupObject<volVectorField>("U");
+        const volScalarField& nut = mesh().lookupObject<volScalarField>("nut");
+        const volScalarField& k    = mesh().lookupObject<volScalarField>("k");
+        const volScalarField& epsilon = mesh().lookupObject<volScalarField>("epsilon");
+        const surfaceScalarField& phi = mesh().lookupObject<surfaceScalarField>("phi");
+        const volScalarField& alpha = mesh().lookupObject<volScalarField>("alpha");
+        const volScalarField& rho = mesh().lookupObject<volScalarField>("rho");
+
+
+
+        volTensorField gradU = fvc::grad(U); // gradient of velocity field
+        volSymmTensorField S = symm(gradU); // symmetric part of the gradient (strain rate tensor)
+    
+        volTensorField Omega = skew(gradU); // antisymmetric part of the gradient (vorticity tensor)
+        volScalarField tefomega = epsilon/(0.09* k + SMALL); // turbulence dissipation rate divided by a small constant times k
+        volScalarField tefomega2 = tefomega * tefomega; // square of tefomega
+
+
+        volScalarField S2 = 2.0 * magSqr(S); // square of the strain rate tensor
+        volScalarField Omega2 = 2.0 * magSqr(Omega); // square of the vorticity tensor
+        volScalarField Omegamag = mag(Omega); // magnitude of the vorticity tensor
+
+        volScalarField D2 = max(S2, 0.09 * tefomega2); // maximum of the strain rate tensor squared and a small constant times the square of tefomega
+        // This is a measure of the turbulence intensity, ensuring it does not go below a certain
+        volScalarField Dtilda = pow(sqrt(D2 + SMALL), 3)*Omegamag; // cube of the square root of D2 plus a small constant, scaled by the magnitude of the vorticity tensor
+
+        volScalarField rStar = sqrt(S2 ) / (sqrt(Omega2 + SMALL)); // ratio of the square root of the strain rate tensor squared to the square root of the vorticity tensor squared, ensuring it does not go below a small constant
+
+
+        volSymmTensorField DSDt = fvc::ddt(S)+fvc::div(phi, S); // time derivative of the strain rate tensor plus divergence of the flux of the strain rate tensor
+
+
+
+        
+        volTensorField rTilda= Omega * 0.0; // Initialize rTilda as a zero tensor field
+
+
+
+        forAll(rTilda, celli)
+        {
+            
+             scalar sum = 0.0;
+            for (int i = 0; i < 3; ++i)
+            {
+                for (int j = 0; j < 3; ++j)
+                {  
+                    for (int k = 0; k < 3; ++k)
+                    {
+                       
+                                sum += 2.0 * Omega[celli].component(3*i+k)* S[celli].component(3*j+k)*(DSDt[celli].component(3*i+j))/Dtilda[celli]; // Calculate the contribution of each component of the tensors to rTilda
+                        
+                    }
+                }
+            }
+
+            rTilda[celli] = sum;
+        }
+ //
+
+        volScalarField rTildamag = mag(rTilda) + SMALL; // magnitude of rTilda plus a small constant to avoid problem when using in tan-1()
+
+        scalar cr1 = 1.0;
+        scalar cr2 = 2.0;
+        scalar cr3 = 1.0;
+        scalar C_curv = 1.0;
+
+
+        volScalarField frotation = (1.0 + cr1)
+                         * (2.0 * rStar / (1.0 + rStar))
+                         * (1.0 - cr3 * atan(cr2 * rTildamag))
+                         - cr1;        // Calculate the rotation function based on the strain rate and vorticity tensors
+
+
+        volScalarField fr1 = max(min(frotation, scalar(1.25)), scalar(0.0)); // Ensure the rotation function is within the range [0, 1.25]
+
+        volScalarField fr2 = max(scalar(0.0), scalar(1.0)+ C_curv*(fr1-scalar(1.0))); // Calculate the curvature correction factor based on the rotation function and a curvature constant
+
+        volScalarField G = nut*(gradU && dev(twoSymm(gradU))); // Calculate the production term based on the strain rate tensor and the kinematic viscosity
+
+	Info<<"Source added ="<<endl<<endl;//<<fr2<<endl<<endl;
+
+        scalarField& kSource = eqn.source(); // Get the source term for k from the equation
+
+        kSource+= (fr2 - 1.0) * alpha()*rho()*G; // Add the curvature correction to the source term for k, scaled by the rho and alpha field
+    #};
+
+    codeSetValue
+    #{
+        
+    #};
+
+        // Dummy entry. Make dependent on above to trigger recompilation
+    code
+    #{
+        $codeInclude
+        $codeCorrect
+        $codeAddSup
+        $codeSetValue
+    #};
+
+}
+
+ epsilonCurvatureCorrectionSource
+{
+    type            coded;
+    active          yes;
+
+    select           all;
+    field            epsilon;
+
+   // name            epsilonCurvatureCorrectionSource;
+
+    codeInclude
+    #{
+        #include "fvm.H"
+        #include <cmath>
+        #include "fvc.H"
+    #};
+
+    codeCorrect
+    #{
+
+    #};
+    codeAddSup
+    #{
+       const volVectorField& U = mesh().lookupObject<volVectorField>("U");
+        const volScalarField& nut = mesh().lookupObject<volScalarField>("nut");
+        const volScalarField& k    = mesh().lookupObject<volScalarField>("k");
+        const volScalarField& epsilon = mesh().lookupObject<volScalarField>("epsilon");
+        const surfaceScalarField& phi = mesh().lookupObject<surfaceScalarField>("phi");
+        const volScalarField& alpha = mesh().lookupObject<volScalarField>("alpha");
+        const volScalarField& rho = mesh().lookupObject<volScalarField>("rho");
+
+
+
+        volTensorField gradU = fvc::grad(U); // gradient of velocity field
+        volSymmTensorField S = symm(gradU); // symmetric part of the gradient (strain rate tensor)
+    
+        volTensorField Omega = skew(gradU); // antisymmetric part of the gradient (vorticity tensor)
+        volScalarField tefomega = epsilon/(0.09* k + SMALL); // turbulence dissipation rate divided by a small constant times k
+        volScalarField tefomega2 = tefomega * tefomega; // square of tefomega
+
+
+        volScalarField S2 = 2.0 * magSqr(S); // square of the strain rate tensor
+        volScalarField Omega2 = 2.0 * magSqr(Omega); // square of the vorticity tensor
+        volScalarField Omegamag = mag(Omega); // magnitude of the vorticity tensor
+
+        volScalarField D2 = max(S2, 0.09 * tefomega2); // maximum of the strain rate tensor squared and a small constant times the square of tefomega
+        // This is a measure of the turbulence intensity, ensuring it does not go below a certain
+        volScalarField Dtilda = pow(sqrt(D2 + SMALL), 3)*Omegamag; // cube of the square root of D2 plus a small constant, scaled by the magnitude of the vorticity tensor
+
+        volScalarField rStar = sqrt(S2 ) / (sqrt(Omega2 + SMALL)); // ratio of the square root of the strain rate tensor squared to the square root of the vorticity tensor squared, ensuring it does not go below a small constant
+
+
+        volSymmTensorField DSDt = fvc::ddt(S)+fvc::div(phi, S); // time derivative of the strain rate tensor plus divergence of the flux of the strain rate tensor
+
+
+
+        
+        volTensorField rTilda= Omega * 0.0; // Initialize rTilda as a zero tensor field
+
+
+
+        forAll(rTilda, celli)
+        {
+            
+             scalar sum = 0.0;
+            for (int i = 0; i < 3; ++i)
+            {
+                for (int j = 0; j < 3; ++j)
+                {  
+                    for (int k = 0; k < 3; ++k)
+                    {
+                       
+                                sum += 2.0 * Omega[celli].component(3*i+k)* S[celli].component(3*j+k)*(DSDt[celli].component(3*i+j))/Dtilda[celli]; // Calculate the contribution of each component of the tensors to rTilda
+                        
+                    }
+                }
+            }
+
+            rTilda[celli] = sum;
+        }
+ //
+
+        volScalarField rTildamag = mag(rTilda) + SMALL; // magnitude of rTilda plus a small constant to avoid problem when using in tan-1()
+
+        scalar cr1 = 1.0;
+        scalar cr2 = 2.0;
+        scalar cr3 = 1.0;
+        scalar C_curv = 1.0;
+        
+            volScalarField Se2(typedName("Se2"), 2*magSqr(dev(symm(gradU))));
+            volScalarField magS(typedName("magS"), sqrt(Se2));
+
+            volScalarField::Internal eta
+            (
+                typedName("eta"), magS()*k()/epsilon()
+            );
+            volScalarField::Internal C1
+            (
+                typedName("C1"),
+                max(eta/(scalar(5) + eta), scalar(0.43))
+            );
+
+
+        volScalarField frotation = (1.0 + cr1)
+                         * (2.0 * rStar / (1.0 + rStar))
+                         * (1.0 - cr3 * atan(cr2 * rTildamag))
+                         - cr1;        // Calculate the rotation function based on the strain rate and vorticity tensors
+
+
+        volScalarField fr1 = max(min(frotation, scalar(1.25)), scalar(0.0)); // Ensure the rotation function is within the range [0, 1.25]
+
+        volScalarField fr2 = max(scalar(0.0), scalar(1.0)+ C_curv*(fr1-scalar(1.0))); // Calculate the curvature correction factor based on the rotation function and a curvature constant
+
+        volScalarField::Internal Pe
+        (
+            typedName("Pe"),
+            C1 * alpha() * rho() * magS() * epsilon()
+        );
+
+
+        scalarField& epsilonSource = eqn.source();
+
+        epsilonSource+= (fr2 - 1.0) * Pe;
+    #};
+    codeSetValue
+    #{
+        
+    #};
+
+    // Dummy entry. Make dependent on above to trigger recompilation
+    code
+    #{
+    $codeInclude
+    $codeCorrect
+    $codeAddSup
+    $codeSetValue
+    #};
+
+}  
+
+
+
+// ************************************************************************* //
