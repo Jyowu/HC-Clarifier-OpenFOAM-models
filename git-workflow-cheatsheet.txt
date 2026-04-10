@@ -1,0 +1,61 @@
+Git Workflow Cheat Sheet
+
+Daily Routine
+
+1. Check repo status
+   git status
+
+2. Review unstaged changes
+   git diff
+
+3. Stage only the files that belong in the next commit
+   git add path/to/file
+   git add -p
+
+4. Review staged changes
+   git diff --cached
+
+5. Commit with a clear message
+   git commit -m "Short message that explains intent"
+
+6. Review recent history
+   git log --oneline --graph --decorate -10
+
+Useful Commands
+
+- Show short status
+  git status --short
+
+- Unstage a file
+  git restore --staged path/to/file
+
+- Discard local changes in a file
+  git restore path/to/file
+
+- Rename or move a file
+  git mv old/path new/path
+
+- Remove a tracked file
+  git rm path/to/file
+
+- Create a new branch
+  git switch -c my-feature
+
+- Switch branches
+  git switch main
+  git switch my-feature
+
+Good Habits
+
+- Make small commits with one clear purpose.
+- Check git diff before git add.
+- Check git diff --cached before git commit.
+- Avoid git add . unless you have reviewed everything.
+- Keep generated files and run output in .gitignore.
+- Write commit messages that explain why the change exists.
+
+For This OpenFOAM Repo
+
+- Put tracked run-related files in run/tracked/.
+- Keep generated run output outside run/tracked/.
+- Use git status often so nothing accidental gets committed.

@@ -26,14 +26,14 @@ License
 #include "makeCompressibleMomentumTransportModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
+/*
 makeBaseMomentumTransportModel
 (
     geometricOneField,
     volScalarField,
     compressibleMomentumTransportModel
 );
-
+*/
 
 // -------------------------------------------------------------------------- //
 // Laminar models

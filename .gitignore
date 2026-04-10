@@ -19,6 +19,9 @@ VS workspaces/
 ._*
 
 # OpenFOAM case runtime output
+/run/*
+!/run/tracked/
+!/run/tracked/**
 **/postProcessing/
 **/processor*/
 **/dynamicCode/

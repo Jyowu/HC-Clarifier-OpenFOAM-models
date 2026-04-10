@@ -319,7 +319,7 @@ curvatureSwirlData BuoyantCurvatureSwirlTools::evaluate
 
         if (!swirlCorrection_)
         {
-            data.Slocal.ref() = zeroVelocity;
+            data.Slocal.ref() = zero;
             data.Fswirl.ref() = zero;
         }
     }
@@ -524,11 +524,12 @@ curvatureSwirlData BuoyantCurvatureSwirlTools::evaluate
         {
             const vector gHat(g.value()/mag(g.value()));
             const volVectorField gradRho(fvc::grad(rho));
+            const dimensionedScalar rhoSmall("rhoSmall", rho.dimensions(), SMALL);
             const dimensionedScalar kSmall("kSmall", k.dimensions(), SMALL);
             const dimensionedScalar uSmall("uSmall", dimVelocity, SMALL);
 
             data.GbCoef.ref() =
-                Cg_*nut*(g & gradRho)/(k + kSmall);
+                Cg_*nut*(g & gradRho)/(max(rho, rhoSmall)*(k + kSmall));
 
             const volScalarField v(typedName("v"), gHat & U);
             const volScalarField u

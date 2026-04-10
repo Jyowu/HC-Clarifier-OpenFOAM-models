@@ -1,6 +1,0 @@
-#!/bin/bash
-
-touch foo.foam
-blockMesh > log.blockMesh
-FTL-Lesson4
-
