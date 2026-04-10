@@ -1,4 +1,4 @@
-#include "BuoyantCurvatureSwirlTools.H"
+#include "BuoyantCurvatureSwirlTools1.H"
 #include "addToRunTimeSelectionTable.H"
 #include "volFields.H"
 #include "surfaceFields.H"
@@ -10,12 +10,12 @@
 namespace Foam
 {
 
-defineTypeNameAndDebug(BuoyantCurvatureSwirlTools, 0);
+defineTypeNameAndDebug(BuoyantCurvatureSwirlTools1, 0);
 
 
 // * * * * * * * * * * * * * * Private Helper Functions  * * * * * * * * * //
 
-vector BuoyantCurvatureSwirlTools::normalisedAxis(const vector& axis)
+vector BuoyantCurvatureSwirlTools1::normalisedAxis(const vector& axis)
 {
     scalar magAxis = mag(axis);
 
@@ -30,7 +30,7 @@ vector BuoyantCurvatureSwirlTools::normalisedAxis(const vector& axis)
 }
 
 
-vectorField BuoyantCurvatureSwirlTools::cellRelPosition() const
+vectorField BuoyantCurvatureSwirlTools1::cellRelPosition() const
 {
     const vectorField& C = mesh_.C();
 
@@ -46,7 +46,7 @@ vectorField BuoyantCurvatureSwirlTools::cellRelPosition() const
 }
 
 
-tmp<volScalarField> BuoyantCurvatureSwirlTools::axialVelocity
+tmp<volScalarField> BuoyantCurvatureSwirlTools1::axialVelocity
 (
     const volVectorField& U
 ) const
@@ -62,7 +62,7 @@ tmp<volScalarField> BuoyantCurvatureSwirlTools::axialVelocity
 }
 
 
-void BuoyantCurvatureSwirlTools::radialDistanceAndTangentialVelocity
+void BuoyantCurvatureSwirlTools1::radialDistanceAndTangentialVelocity
 (
     const volVectorField& U,
     tmp<volScalarField>& tr,
@@ -125,7 +125,7 @@ void BuoyantCurvatureSwirlTools::radialDistanceAndTangentialVelocity
 
 // * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
 
-BuoyantCurvatureSwirlTools::BuoyantCurvatureSwirlTools
+BuoyantCurvatureSwirlTools1::BuoyantCurvatureSwirlTools1
 (
     const fvMesh& mesh,
     const dictionary& dict
@@ -202,7 +202,7 @@ BuoyantCurvatureSwirlTools::BuoyantCurvatureSwirlTools
 }
 
 
-bool BuoyantCurvatureSwirlTools::read(const dictionary& dict)
+bool BuoyantCurvatureSwirlTools1::read(const dictionary& dict)
 {
     curvatureCorrection_ =
         dict.lookupOrDefault<Switch>("curvatureCorrection", curvatureCorrection_);
@@ -244,13 +244,13 @@ bool BuoyantCurvatureSwirlTools::read(const dictionary& dict)
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-bool BuoyantCurvatureSwirlTools::active() const
+bool BuoyantCurvatureSwirlTools1::active() const
 {
     return curvatureCorrection_ || swirlCorrection_ || buoyancyCorrection_;
 }
 
 
-curvatureSwirlData BuoyantCurvatureSwirlTools::evaluate
+curvatureSwirlData BuoyantCurvatureSwirlTools1::evaluate
 (
     const volVectorField& U,
     const volTensorField& gradU,

@@ -55,6 +55,9 @@ makeRASModel(realizableKECC);
 
 #include "realizableKE_BCS.H"
 makeRASModel(realizableKE_BCS);
+
+#include "realizableKE_BCS1.H"
+makeRASModel(realizableKE_BCS1);
 // -------------------------------------------------------------------------- //
 // LES models
 // -------------------------------------------------------------------------- //

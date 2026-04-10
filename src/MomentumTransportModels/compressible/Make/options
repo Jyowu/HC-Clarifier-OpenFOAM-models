@@ -12,5 +12,6 @@ LIB_LIBS = \
     -lfiniteVolume \
     -lmeshTools  \
     -lbuoyantCurvatureSwirlTools \
+    -lbuoyantCurvatureSwirlTools1 \
     -lcompressibleMomentumTransportModels \
     -lmomentumTransportModels
