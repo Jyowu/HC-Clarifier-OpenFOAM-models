@@ -27,7 +27,6 @@ License
 #include "fvModels.H"
 #include "fvConstraints.H"
 #include "bound.H"
-#include "BuoyantCurvatureSwirlTools.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -375,7 +374,7 @@ volScalarField zeroBuoyLimiter
 
 if (curvatureSwirlTools_.active())
 {
-    curvatureSwirlData swirlData = curvatureSwirlTools_.evaluate
+    curvatureSwirlData1 swirlData = curvatureSwirlTools_.evaluate
     (
         U,
         gradU,
@@ -383,6 +382,7 @@ if (curvatureSwirlTools_.active())
         magS,
         rho,
         k_,
+        epsilon_,
         nut
     );
     tFrEff = swirlData.frEff;

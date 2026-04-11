@@ -11,7 +11,7 @@
 namespace Foam
 {
 
-struct curvatureSwirlData
+struct curvatureSwirlData1
 {
     tmp<volScalarField> r;
     tmp<volScalarField> uTheta;
@@ -41,6 +41,10 @@ class BuoyantCurvatureSwirlTools1
         dimensionedScalar S0_;
         dimensionedScalar S1_;
         dimensionedScalar frMax_;
+        dimensionedScalar cCurv_;
+        dimensionedScalar cr1_;
+        dimensionedScalar cr2_;
+        dimensionedScalar cr3_;
         dimensionedScalar swirlEps_;
         dimensionedScalar Cg_;
 
@@ -86,7 +90,7 @@ public:
 
         bool active() const;
 
-        curvatureSwirlData evaluate
+        curvatureSwirlData1 evaluate
         (
             const volVectorField& U,
             const volTensorField& gradU,
@@ -94,6 +98,7 @@ public:
             const volScalarField& magS,
             const volScalarField& rho,
             const volScalarField& k,
+            const volScalarField& epsilon,
             const volScalarField& nut
         ) const;
 

@@ -62,7 +62,7 @@ SourceFiles
 
 #include "RASModel.H"
 #include "eddyViscosity.H"
-#include "BuoyantCurvatureSwirlTools.H"
+#include "BuoyantCurvatureSwirlTools1.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -92,7 +92,7 @@ protected:
             dimensionedScalar sigmak_;
             dimensionedScalar sigmaEps_;
 
-            BuoyantCurvatureSwirlTools curvatureSwirlTools_;
+            BuoyantCurvatureSwirlTools1 curvatureSwirlTools_;
 
             Switch swirlFilter_;
 

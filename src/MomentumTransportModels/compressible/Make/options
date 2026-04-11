@@ -5,6 +5,7 @@ EXE_INC = \
     -I$(LIB_SRC)/MomentumTransportModels/momentumTransportModels/lnInclude \
     -I$(LIB_SRC)/MomentumTransportModels/compressible/lnInclude \
     -IBuoyantCurvatureSwirlTools/lnInclude \
+    -IBuoyantCurvatureSwirlTools1/lnInclude \
 
 LIB_LIBS = \
     -L$(FOAM_USER_LIBBIN) \

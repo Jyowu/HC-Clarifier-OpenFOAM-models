@@ -171,6 +171,30 @@ BuoyantCurvatureSwirlTools1::BuoyantCurvatureSwirlTools1
         dimless,
         dict.lookupOrDefault<scalar>("frMax", 1.25)
     ),
+    cCurv_
+    (
+        "cCurv",
+        dimless,
+        dict.lookupOrDefault<scalar>("cCurv", 1.0)
+    ),
+    cr1_
+    (
+        "cr1",
+        dimless,
+        dict.lookupOrDefault<scalar>("cr1", 1.0)
+    ),
+    cr2_
+    (
+        "cr2",
+        dimless,
+        dict.lookupOrDefault<scalar>("cr2", 2.0)
+    ),
+    cr3_
+    (
+        "cr3",
+        dimless,
+        dict.lookupOrDefault<scalar>("cr3", 1.0)
+    ),
     swirlEps_
     (
         "swirlEps",
@@ -199,6 +223,13 @@ BuoyantCurvatureSwirlTools1::BuoyantCurvatureSwirlTools1
             << " and S1=" << S1_.value()
             << exit(FatalError);
     }
+
+    if (cCurv_.value() <= 0)
+    {
+        FatalErrorInFunction
+            << "Require cCurv > 0, but got cCurv=" << cCurv_.value()
+            << exit(FatalError);
+    }
 }
 
 
@@ -219,6 +250,10 @@ bool BuoyantCurvatureSwirlTools1::read(const dictionary& dict)
     S0_.readIfPresent(dict);
     S1_.readIfPresent(dict);
     frMax_.readIfPresent(dict);
+    cCurv_.readIfPresent(dict);
+    cr1_.readIfPresent(dict);
+    cr2_.readIfPresent(dict);
+    cr3_.readIfPresent(dict);
     swirlEps_.readIfPresent(dict);
     Cg_.readIfPresent(dict);
     writeFields_ = dict.lookupOrDefault<Switch>("writeFields", writeFields_);
@@ -238,6 +273,13 @@ bool BuoyantCurvatureSwirlTools1::read(const dictionary& dict)
             << exit(FatalError);
     }
 
+    if (cCurv_.value() <= 0)
+    {
+        FatalErrorInFunction
+            << "Require cCurv > 0, but got cCurv=" << cCurv_.value()
+            << exit(FatalError);
+    }
+
     return true;
 }
 
@@ -250,18 +292,19 @@ bool BuoyantCurvatureSwirlTools1::active() const
 }
 
 
-curvatureSwirlData BuoyantCurvatureSwirlTools1::evaluate
+curvatureSwirlData1 BuoyantCurvatureSwirlTools1::evaluate
 (
     const volVectorField& U,
     const volTensorField& gradU,
-    const volScalarField& S2,
-    const volScalarField& magS,
+    const volScalarField& /*S2*/,
+    const volScalarField& /*magS*/,
     const volScalarField& rho,
     const volScalarField& k,
+    const volScalarField& epsilon,
     const volScalarField& nut
 ) const
 {
-    curvatureSwirlData data;
+    curvatureSwirlData1 data;
 
     const dimensionedScalar zero(dimless, 0.0);
     const dimensionedScalar one(dimless, 1.0);
@@ -345,44 +388,137 @@ curvatureSwirlData BuoyantCurvatureSwirlTools1::evaluate
 
     if (needCurvatureFields && curvatureCorrection_)
     {
+        // Fluent's two-equation correction uses the full strain tensor,
+        // its material derivative, and a bounded Spalart-Shur multiplier.
+        const volSymmTensorField S(symm(gradU));
         const volTensorField Omega(skew(gradU));
 
-        const volScalarField::Internal magOmega
+        const volScalarField strainMag
         (
-            typedName("magOmega"),
-            sqrt(2.0*magSqr(Omega)())
+            typedName("strainMag"),
+            sqrt(2.0*magSqr(S))
         );
 
-        const volScalarField::Internal magScc
+        const volScalarField rotationMag
         (
-            typedName("magScc"),
-            magS()
+            typedName("rotationMag"),
+            sqrt(2.0*magSqr(Omega))
         );
 
-        const volScalarField::Internal frInternal
+        const scalar deltaTValue = max(mesh_.time().deltaTValue(), SMALL);
+        const dimensionedScalar deltaT("deltaT", dimTime, deltaTValue);
+        const dimensionedScalar kSmall("kSmall", k.dimensions(), SMALL);
+        const dimensionedScalar omegaSmall("omegaSmall", dimless/dimTime, SMALL);
+        const dimensionedScalar d2Small(sqr(omegaSmall));
+        const dimensionedScalar d4Small(sqr(d2Small));
+        const dimensionedScalar CmuRef("CmuRef", dimless, 0.09);
+
+        const volScalarField omegaTurb
         (
-            typedName("fr"),
-            min
+            typedName("omegaTurb"),
+            epsilon/(CmuRef*max(k, kSmall))
+        );
+
+        const volScalarField D2
+        (
+            typedName("D2"),
+            max(sqr(strainMag), 0.09*sqr(omegaTurb))
+        );
+
+        const volScalarField D
+        (
+            typedName("D"),
+            sqrt(D2)
+        );
+
+        const volSymmTensorField Sold(symm(fvc::grad(U.oldTime())));
+
+        const volScalarField DSxxDt
+        (
+            typedName("DSxxDt"),
+            (S.component(symmTensor::XX) - Sold.component(symmTensor::XX))/deltaT
+          + (U & fvc::grad(S.component(symmTensor::XX)))
+        );
+
+        const volScalarField DSxyDt
+        (
+            typedName("DSxyDt"),
+            (S.component(symmTensor::XY) - Sold.component(symmTensor::XY))/deltaT
+          + (U & fvc::grad(S.component(symmTensor::XY)))
+        );
+
+        const volScalarField DSxzDt
+        (
+            typedName("DSxzDt"),
+            (S.component(symmTensor::XZ) - Sold.component(symmTensor::XZ))/deltaT
+          + (U & fvc::grad(S.component(symmTensor::XZ)))
+        );
+
+        const volScalarField DSyyDt
+        (
+            typedName("DSyyDt"),
+            (S.component(symmTensor::YY) - Sold.component(symmTensor::YY))/deltaT
+          + (U & fvc::grad(S.component(symmTensor::YY)))
+        );
+
+        const volScalarField DSyzDt
+        (
+            typedName("DSyzDt"),
+            (S.component(symmTensor::YZ) - Sold.component(symmTensor::YZ))/deltaT
+          + (U & fvc::grad(S.component(symmTensor::YZ)))
+        );
+
+        const volScalarField DSzzDt
+        (
+            typedName("DSzzDt"),
+            (S.component(symmTensor::ZZ) - Sold.component(symmTensor::ZZ))/deltaT
+          + (U & fvc::grad(S.component(symmTensor::ZZ)))
+        );
+
+        volSymmTensorField DSDt
+        (
+            IOobject
             (
-                max
-                (
-                    (
-                        magScc
-                       /max
-                        (
-                            magOmega,
-                            dimensionedScalar
-                            (
-                                "smallMagOmega",
-                                magOmega.dimensions(),
-                                SMALL
-                            )
-                        )
-                    ),
-                    scalar(0)
-                ),
-                frMax_.value()
-            )
+                "DSDt",
+                mesh_.time().name(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh_,
+            dimensionedSymmTensor("zero", DSxxDt.dimensions(), symmTensor::zero)
+        );
+
+        DSDt.replace(symmTensor::XX, DSxxDt);
+        DSDt.replace(symmTensor::XY, DSxyDt);
+        DSDt.replace(symmTensor::XZ, DSxzDt);
+        DSDt.replace(symmTensor::YY, DSyyDt);
+        DSDt.replace(symmTensor::YZ, DSyzDt);
+        DSDt.replace(symmTensor::ZZ, DSzzDt);
+
+        const volScalarField rStar
+        (
+            typedName("rStar"),
+            strainMag/max(rotationMag, omegaSmall)
+        );
+
+        const volScalarField rTilde
+        (
+            typedName("rTilde"),
+            (twoSymm(Omega & S) && DSDt)/max(rotationMag*D2*D, d4Small)
+        );
+
+        const volScalarField fRot
+        (
+            typedName("fRot"),
+            ((one + cr1_)*((2.0*rStar)/(one + rStar))*(one - cr3_*atan(cr2_*rTilde)))
+          - cr1_
+        );
+
+        const volScalarField frTilda
+        (
+            typedName("frTilda"),
+            max(min(fRot, frMax_), zero)
         );
 
         data.fr = tmp<volScalarField>
@@ -397,10 +533,12 @@ curvatureSwirlData BuoyantCurvatureSwirlTools1::evaluate
                     IOobject::NO_READ,
                     IOobject::NO_WRITE
                 ),
-                frInternal,
-                data.Fswirl().boundaryField()
+                mesh_,
+                one
             )
         );
+
+        data.fr.ref() = max(zero, one + cCurv_*(frTilda - one));
     }
     else
     {
