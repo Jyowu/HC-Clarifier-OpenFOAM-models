@@ -58,7 +58,26 @@ tmp<volScalarField> BuoyantCurvatureSwirlTools1::axialVelocity
         axisDirection_
     );
 
-    return U & eAxis;
+    tmp<volScalarField> tUaxial
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Uaxial",
+                mesh_.time().name(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh_,
+            dimensionedScalar("zero", dimVelocity, 0.0)
+        )
+    );
+
+    tUaxial.ref() = (U & eAxis);
+
+    return tUaxial;
 }
 
 
