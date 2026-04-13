@@ -1,0 +1,1 @@
+Custom OpenFOAM turbulence-model extensions based on the realizable `k-epsilon` framework, with optional buoyancy, curvature, and swirl corrections. The repository includes both source-code development for the custom models and tracked validation/test cases for hydrocyclone and clarifier-style simulations.
