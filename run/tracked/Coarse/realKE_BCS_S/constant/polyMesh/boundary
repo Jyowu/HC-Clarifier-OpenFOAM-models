@@ -20,32 +20,32 @@ FoamFile
     {
         type            patch;
         nFaces          896;
-        startFace       576477;
+        startFace       613709;
     }
     negyinlet
     {
         type            patch;
         nFaces          28;
-        startFace       577373;
+        startFace       614605;
     }
     posyinlet
     {
         type            patch;
         nFaces          28;
-        startFace       577401;
+        startFace       614633;
     }
     topoutlet
     {
         type            patch;
         nFaces          384;
-        startFace       577429;
+        startFace       614661;
     }
     wall
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          14668;
-        startFace       577813;
+        nFaces          8940;
+        startFace       615045;
     }
 )
 

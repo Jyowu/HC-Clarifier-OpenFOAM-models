@@ -52,7 +52,8 @@ RAS
         frMax               1.25;
         swirlEps            1e-6;
         Cg                  1.0;
-        writeFields         false;
+        writeFields         true;
+       
     }
 }
 
