@@ -18,8 +18,13 @@ VS workspaces/
 *~
 ._*
 
+# External / UWO collaboration folder
+/HydroCycloneModelling_UWO/
+
 # OpenFOAM case runtime output
-/run/
+/run/*
+!/run/gittracked/
+!/run/gittracked/**
 **/postProcessing/
 **/processor*/
 **/dynamicCode/
