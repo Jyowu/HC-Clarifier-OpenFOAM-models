@@ -1,0 +1,3 @@
+BuoyantCurvatureSwirlTools5.C
+
+LIB = $(FOAM_USER_LIBBIN)/libbuoyantCurvatureSwirlTools5
